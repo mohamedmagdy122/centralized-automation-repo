@@ -1,0 +1,30 @@
+name: Reusable .NET Workflow
+on:
+  workflow_call:
+    inputs:
+      dotnet-version: {required: true, type: string}
+      project-path: {required: true, type: string}
+
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ inputs.dotnet-version }}
+      - name: Build & Publish
+        run: dotnet publish ${{ inputs.project-path }} -c Release -o ./build-output
+      - name: GitLeaks Scan
+        uses: gitleaks/gitleaks-action@v2
+      - name: CodeQL Init
+        uses: github/codeql-action/init@v3
+        with:
+          languages: csharp
+      - name: Build and Push Docker
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ inputs.project-path }}
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/dotnet-backend:latest

@@ -4,11 +4,28 @@ inputs:
   username: {required: true}
   password: {required: true}
   image-name: {required: true}
+  tag: {required: false, default: 'latest'}
+outputs:
+  image_name:
+    description: 'Full image name with tag'
+    value: ${{ steps.build.outputs.image_name }}
 runs:
   using: 'composite'
   steps:
-    - shell: bash
+    - name: Login to Registry
+      shell: bash
       run: |
-        docker build -t ${{ inputs.registry }}/${{ inputs.image-name }}:latest -f .github/actions/react-docker-s2i/Dockerfile.react .
         echo "${{ inputs.password }}" | docker login ${{ inputs.registry }} -u ${{ inputs.username }} --password-stdin
-        docker push ${{ inputs.registry }}/${{ inputs.image-name }}:latest
+
+    - name: Build and Push
+      id: build
+      shell: bash
+      run: |
+        IMAGE="${{ inputs.registry }}/${{ inputs.image-name }}:${{ inputs.tag }}"
+        SHA_IMAGE="${{ inputs.registry }}/${{ inputs.image-name }}:${GITHUB_SHA}"
+        docker build -t $IMAGE -t $SHA_IMAGE \
+          -f ${{ github.action_path }}/Dockerfile.react \
+          ./React-Frontend
+        docker push $IMAGE
+        docker push $SHA_IMAGE
+        echo "image_name=$IMAGE" >> $GITHUB_OUTPUT

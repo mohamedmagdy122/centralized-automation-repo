@@ -19,7 +19,6 @@ runs:
         IMAGE="${{ inputs.registry }}/${{ inputs.image-name }}:${{ inputs.tag }}"
         SHA_IMAGE="${{ inputs.registry }}/${{ inputs.image-name }}:${GITHUB_SHA}"
         cp ${{ github.action_path }}/Dockerfile.react ./React-Frontend/Dockerfile.react
-        cp ./React-Frontend/nginx.conf ./React-Frontend/nginx.conf
         docker build -t $IMAGE -t $SHA_IMAGE \
           -f ./React-Frontend/Dockerfile.react \
           ./React-Frontend
